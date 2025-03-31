@@ -1,0 +1,18 @@
+services:
+  postgres_etl:
+    image: postgres:13
+    hostname: postgres_etl
+    environment:
+      POSTGRES_USER: etl
+      POSTGRES_PASSWORD: etl
+      POSTGRES_DB: etl
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./create_table.sql:/docker-entrypoint-initdb.d/create_table.sql
+    networks:
+      - metabase_etl_energy
+
+networks:
+  metabase_etl_energy:
+    external: true

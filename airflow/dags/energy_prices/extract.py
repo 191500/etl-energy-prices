@@ -14,7 +14,7 @@ USA_API_KEY = Variable.get("USA_API_KEY")
 
 @dag(
     dag_id="extract_energy_prices",
-    schedule="*/10 * * * *",
+    schedule="*/5 * * * *",
     start_date=datetime(2025, 3, 23),
     catchup=False
 )
@@ -25,6 +25,27 @@ def main():
         """Return the count registers in db; offset for api call"""
 
         pg_hook = PostgresHook(postgres_conn_id="DB_ETL")
+
+        # conn = pg_hook.get_conn()
+        # cursor = conn.cursor()
+        # cursor.execute("""
+        #     CREATE TABLE IF NOT EXISTS energy_prices (
+        #         id SERIAL primary key,
+        #         year_period varchar(4),
+        #         month_period varchar(2),
+        #         stateId varchar(5),
+        #         stateDescription varchar(50),
+        #         sectorid varchar(3),
+        #         sectorName varchar(50),
+        #         customers int,
+        #         price float,
+        #         revenue float,
+        #         sales float
+        #     );
+        # """)
+        # cursor.close()
+        # conn.commit()
+
         res = pg_hook.get_records("select count(ep.id) from energy_prices ep")        
         offset = res[0][0]
 

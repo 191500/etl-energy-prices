@@ -54,8 +54,8 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres_airflow/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres_airflow/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -83,18 +83,6 @@ x-airflow-common:
       condition: service_healthy
 
 services:
-
-  postgres_etl:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: etl
-      POSTGRES_PASSWORD: etl
-      POSTGRES_DB: etl
-    volumes:
-      - postgres-db-volume:/var/lib/postgresqletl/data
-    ports:
-      - "5432:5432"
-
   postgres:
     image: postgres:13
     environment:
@@ -109,6 +97,9 @@ services:
       retries: 5
       start_period: 5s
     restart: always
+    hostname: postgres_airflow
+    networks:
+      - metabase_etl_energy
 
   redis:
     image: redis:latest
@@ -121,6 +112,8 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    networks:
+      - metabase_etl_energy
 
   airflow-webserver:
     <<: *airflow-common
@@ -138,6 +131,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - metabase_etl_energy
 
   airflow-scheduler:
     <<: *airflow-common
@@ -153,6 +148,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - metabase_etl_energy
 
   airflow-worker:
     <<: *airflow-common
@@ -176,6 +173,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - metabase_etl_energy
 
   airflow-triggerer:
     <<: *airflow-common
@@ -191,6 +190,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - metabase_etl_energy
 
   airflow-init:
     <<: *airflow-common
@@ -255,6 +256,8 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
+    networks:
+      - metabase_etl_energy
 
   airflow-cli:
     <<: *airflow-common
@@ -268,6 +271,8 @@ services:
       - bash
       - -c
       - airflow
+    networks:
+      - metabase_etl_energy
 
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.
@@ -290,6 +295,12 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - metabase_etl_energy
 
 volumes:
   postgres-db-volume:
+
+networks:
+  metabase_etl_energy:
+    external: true
